@@ -12,8 +12,12 @@
 			"errcheck",
 			"gocyclo",
 			"gofmt",
-			"goimports"
-		]
+			"gci",
+			"errname"
+		],
+		"gci": {
+			"sections": ["standard", "default", "localmodule"]
+		}
 	},
 	"fast": true
 }

@@ -1,0 +1,51 @@
+{
+	"total": 2,
+	"data": [
+	    {
+		"timestamp": {
+		    "value": 1726749900
+		},
+		"battery": {
+		    "value": 47
+		},
+		"temperature": {
+		    "value": 25.6
+		},
+		"humidity": {
+		    "value": 58.3
+		},
+		"co2": {
+		    "value": 454
+		},
+		"pm25": {
+		    "value": 12
+		},
+		"pm10": {
+		    "value": 12
+		}
+	    },
+	    {
+		"timestamp": {
+		    "value": 1726750800
+		},
+		"battery": {
+		    "value": 44
+		},
+		"temperature": {
+		    "value": 26.1
+		},
+		"humidity": {
+		    "value": 56
+		},
+		"co2": {
+		    "value": 452
+		},
+		"pm25": {
+		    "value": 12
+		},
+		"pm10": {
+		    "value": 12
+		}
+	    }
+	]
+    }

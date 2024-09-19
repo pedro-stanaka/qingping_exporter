@@ -1,0 +1,53 @@
+{
+  "total": 1,
+  "devices": [
+    {
+      "info": {
+        "mac": "34CE00000000",
+        "product": {
+          "id": 1203,
+          "code": "CGDN1",
+          "name": "青萍空气检测仪 Lite",
+          "en_name": "Qingping Air Monitor Lite",
+          "noBleSetting": false
+        },
+        "name": "Office Air Monitor",
+        "version": "4.8.5",
+        "created_at": 1726749633,
+        "group_id": 0,
+        "group_name": "",
+        "status": {
+          "offline": false
+        },
+        "connection_type": "WiFi",
+        "setting": {
+          "report_interval": 180,
+          "collect_interval": 60
+        }
+      },
+      "data": {
+        "timestamp": {
+          "value": 1726774620
+        },
+        "battery": {
+          "value": 10
+        },
+        "temperature": {
+          "value": 26.5
+        },
+        "humidity": {
+          "value": 49.7
+        },
+        "co2": {
+          "value": 555
+        },
+        "pm25": {
+          "value": 11
+        },
+        "pm10": {
+          "value": 11
+        }
+      }
+    }
+  ]
+}
