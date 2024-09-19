@@ -23,7 +23,7 @@ func TestClient_TestAuthenticate(t *testing.T) {
 		return mockedNow
 	}
 
-	qc := client.New(client.ClientOpts{OauthUrl: server.URL, AppKey: "foo", AppSecret: "bar"}, nowFunc)
+	qc := client.New(client.APIConfig{OauthUrl: server.URL, AppKey: "foo", AppSecret: "bar"}, nowFunc)
 	token, err := qc.Authenticate()
 	assert.NoError(t, err)
 	assert.Equal(t, "test-token", token)
@@ -64,7 +64,7 @@ func TestClient_GetDeviceList(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := client.New(client.ClientOpts{
+	client := client.New(client.APIConfig{
 		BaseURL:  server.URL,
 		OauthUrl: authSrv.URL,
 	}, nil)
@@ -97,7 +97,7 @@ func TestClient_ChangeDeviceSettings(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := client.New(client.ClientOpts{
+	client := client.New(client.APIConfig{
 		BaseURL:  server.URL,
 		OauthUrl: authSrv.URL,
 	}, nil)
@@ -121,7 +121,7 @@ func TestGetDataHistory(t *testing.T) {
 	defer mockServer.Close()
 
 	// Create a new Qingping client
-	qc := client.New(client.ClientOpts{
+	qc := client.New(client.APIConfig{
 		BaseURL:  mockServer.URL,
 		OauthUrl: authSrv.URL,
 	}, nil)

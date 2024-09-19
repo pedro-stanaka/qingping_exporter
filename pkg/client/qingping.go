@@ -13,14 +13,14 @@ import (
 	"github.com/efficientgo/core/errors"
 )
 
-type ClientOpts struct {
+type APIConfig struct {
 	BaseURL   string
 	OauthUrl  string
 	AppKey    string
 	AppSecret string
 }
 
-func (o ClientOpts) BindFlags(app *kingpin.Application) {
+func (o APIConfig) BindFlags(app *kingpin.Application) {
 	app.Flag("base-url", "Base URL of the Qingping API.").
 		Envar("QINGPING_BASE_URL").
 		Default("https://oauth.cleargrass.com/oauth2/token").
@@ -48,7 +48,7 @@ type oauthToken struct {
 }
 
 type Client struct {
-	Options    ClientOpts
+	apiConfig  APIConfig
 	HTTPClient *http.Client
 	Token      oauthToken
 	nowFunc    func() time.Time
@@ -114,12 +114,12 @@ type ValueData struct {
 	Value float64 `json:"value"`
 }
 
-func New(opts ClientOpts, nowFunc func() time.Time) *Client {
+func New(opts APIConfig, nowFunc func() time.Time) *Client {
 	if nowFunc == nil {
 		nowFunc = time.Now
 	}
 	return &Client{
-		Options:    opts,
+		apiConfig:  opts,
 		HTTPClient: &http.Client{},
 		nowFunc:    nowFunc,
 	}
@@ -134,11 +134,11 @@ func (c *Client) Authenticate() (string, error) {
 	data.Set("grant_type", "client_credentials")
 	data.Set("scope", "device_full_access")
 
-	req, err := http.NewRequest("POST", c.Options.OauthUrl, bytes.NewBufferString(data.Encode()))
+	req, err := http.NewRequest("POST", c.apiConfig.OauthUrl, bytes.NewBufferString(data.Encode()))
 	if err != nil {
 		return "", err
 	}
-	req.SetBasicAuth(c.Options.AppKey, c.Options.AppSecret)
+	req.SetBasicAuth(c.apiConfig.AppKey, c.apiConfig.AppSecret)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := c.HTTPClient.Do(req)
@@ -196,7 +196,7 @@ func (c *Client) doAuthenticatedReq(req *http.Request) (*http.Response, error) {
 
 func (c *Client) GetDeviceList() (*DeviceListResponse, error) {
 	timestamp := strconv.FormatInt(c.nowFunc().Unix(), 10)
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/v1/apis/devices?timestamp=%s", c.Options.BaseURL, timestamp), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/v1/apis/devices?timestamp=%s", c.apiConfig.BaseURL, timestamp), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +233,7 @@ func (c *Client) ChangeDeviceSettings(mac []string, reportInterval, collectInter
 		return err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/apis/devices/settings", c.Options.BaseURL), bytes.NewBuffer(bodyBytes))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/apis/devices/settings", c.apiConfig.BaseURL), bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return err
 	}
@@ -260,7 +260,7 @@ func (c *Client) GetDataHistory(mac string, startTime, endTime time.Time) (*Devi
 	values.Set("timestamp", strconv.FormatInt(c.nowFunc().UnixMilli(), 10))
 	values.Set("limit", "200")
 
-	url := fmt.Sprintf("%s/v1/apis/devices/data?%s", c.Options.BaseURL, values.Encode())
+	url := fmt.Sprintf("%s/v1/apis/devices/data?%s", c.apiConfig.BaseURL, values.Encode())
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
