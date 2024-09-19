@@ -12,6 +12,8 @@ import (
 	"github.com/alecthomas/kingpin"
 	"github.com/efficientgo/core/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/thanos-io/thanos/pkg/extprom"
+	thanoshttp "github.com/thanos-io/thanos/pkg/extprom/http"
 )
 
 type APIConfig struct {
@@ -147,6 +149,9 @@ func New(apiConf APIConfig, opts ...ClientOption) *Client {
 	httpClient := &http.Client{}
 	if o.reg != nil {
 		// wrap HTTP client with promhttp.InstrumentRoundTripperDuration
+		reg := extprom.WrapRegistererWithPrefix("qingping_client_", o.reg)
+		httpClientMetrics := thanoshttp.NewClientMetrics(reg)
+		httpClient.Transport = thanoshttp.InstrumentedRoundTripper(httpClient.Transport, httpClientMetrics)
 	}
 
 	return &Client{
