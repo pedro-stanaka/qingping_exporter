@@ -11,6 +11,7 @@ import (
 
 	"github.com/alecthomas/kingpin"
 	"github.com/efficientgo/core/errors"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type APIConfig struct {
@@ -114,14 +115,44 @@ type ValueData struct {
 	Value float64 `json:"value"`
 }
 
-func New(opts APIConfig, nowFunc func() time.Time) *Client {
-	if nowFunc == nil {
-		nowFunc = time.Now
+type clientOpts struct {
+	reg     prometheus.Registerer
+	nowFunc func() time.Time
+}
+
+var defaultClientOpts = clientOpts{
+	nowFunc: time.Now,
+}
+
+type ClientOption func(*clientOpts)
+
+func WithRegistry(reg prometheus.Registerer) func(*clientOpts) {
+	return func(o *clientOpts) {
+		o.reg = reg
 	}
+}
+
+func WithNowFunc(nowFunc func() time.Time) func(*clientOpts) {
+	return func(o *clientOpts) {
+		o.nowFunc = nowFunc
+	}
+}
+
+func New(apiConf APIConfig, opts ...ClientOption) *Client {
+	o := defaultClientOpts
+	for _, opt := range opts {
+		opt(&o)
+	}
+
+	httpClient := &http.Client{}
+	if o.reg != nil {
+		// wrap HTTP client with promhttp.InstrumentRoundTripperDuration
+	}
+
 	return &Client{
-		apiConfig:  opts,
-		HTTPClient: &http.Client{},
-		nowFunc:    nowFunc,
+		apiConfig:  apiConf,
+		HTTPClient: httpClient,
+		nowFunc:    o.nowFunc,
 	}
 }
 

@@ -23,7 +23,10 @@ func TestClient_TestAuthenticate(t *testing.T) {
 		return mockedNow
 	}
 
-	qc := client.New(client.APIConfig{OauthUrl: server.URL, AppKey: "foo", AppSecret: "bar"}, nowFunc)
+	qc := client.New(
+		client.APIConfig{OauthUrl: server.URL, AppKey: "foo", AppSecret: "bar"},
+		client.WithNowFunc(nowFunc),
+	)
 	token, err := qc.Authenticate()
 	assert.NoError(t, err)
 	assert.Equal(t, "test-token", token)
@@ -67,7 +70,7 @@ func TestClient_GetDeviceList(t *testing.T) {
 	client := client.New(client.APIConfig{
 		BaseURL:  server.URL,
 		OauthUrl: authSrv.URL,
-	}, nil)
+	})
 
 	result, err := client.GetDeviceList()
 	assert.NoError(t, err)
@@ -100,7 +103,7 @@ func TestClient_ChangeDeviceSettings(t *testing.T) {
 	client := client.New(client.APIConfig{
 		BaseURL:  server.URL,
 		OauthUrl: authSrv.URL,
-	}, nil)
+	})
 
 	err := client.ChangeDeviceSettings([]string{"mac1", "mac2"}, 5*time.Second, 10*time.Second)
 	assert.NoError(t, err)
@@ -124,7 +127,7 @@ func TestGetDataHistory(t *testing.T) {
 	qc := client.New(client.APIConfig{
 		BaseURL:  mockServer.URL,
 		OauthUrl: authSrv.URL,
-	}, nil)
+	})
 
 	// Call the GetDataHistory method
 	startTime := time.Unix(1726749900, 0)
