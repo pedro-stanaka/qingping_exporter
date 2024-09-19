@@ -1,0 +1,19 @@
+{
+	"run": {
+		"tests": true,
+		"timeout": "10m0s",
+		"allow-parallel-runners": true
+	},
+	"linters": {
+		"enable": [
+			"revive",
+			"govet",
+			"staticcheck",
+			"errcheck",
+			"gocyclo",
+			"gofmt",
+			"goimports"
+		]
+	},
+	"fast": true
+}
