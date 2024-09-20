@@ -1,19 +1,48 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
-	"gopkg.in/alecthomas/kingpin.v2"
+	"github.com/alecthomas/kingpin"
+	"github.com/go-kit/log"
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/pedro-stanaka/qingping_exporter/pkg/client"
 )
+
+type actionFunc func(prometheus.Registerer, log.Logger) error
+
+type cmdsConfig struct {
+	cmdAction map[string]actionFunc
+}
+
+var apiConfig = &client.APIConfig{}
 
 func main() {
 	app := kingpin.New("qingping_exporter", "A simple CLI application.")
 	kingpin.Version("1.0.0")
 	kingpin.HelpFlag.Short('h')
 
-	kingpin.MustParse(app.Parse(os.Args[1:]))
+	cfg := &cmdsConfig{
+		cmdAction: make(map[string]actionFunc),
+	}
 
-	// Print hello world message
-	fmt.Println("Hello, World!")
+	apiConfig.BindFlags(app)
+
+	registerListCommand(app, cfg)
+
+	cmd, err := app.Parse(os.Args[1:])
+
+	if err != nil {
+		kingpin.Fatalf("error: %s", err)
+	}
+
+	logger := log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
+	reg := prometheus.NewRegistry()
+
+	if err := cfg.cmdAction[cmd](reg, logger); err != nil {
+		kingpin.Fatalf("error: %s", err)
+	}
+
+	os.Exit(0)
 }

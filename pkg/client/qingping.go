@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -23,10 +24,10 @@ type APIConfig struct {
 	AppSecret string
 }
 
-func (o APIConfig) BindFlags(app *kingpin.Application) {
+func (o *APIConfig) BindFlags(app *kingpin.Application) {
 	app.Flag("base-url", "Base URL of the Qingping API.").
 		Envar("QINGPING_BASE_URL").
-		Default("https://oauth.cleargrass.com/oauth2/token").
+		Default("https://apis.cleargrass.com").
 		StringVar(&o.BaseURL)
 
 	app.Flag("oauth-url", "OAuth URL of the Qingping API.").
@@ -51,7 +52,7 @@ type oauthToken struct {
 }
 
 type Client struct {
-	apiConfig  APIConfig
+	apiConfig  *APIConfig
 	HTTPClient *http.Client
 	Token      oauthToken
 	nowFunc    func() time.Time
@@ -69,6 +70,17 @@ type DeviceDataResponse struct {
 
 type Device struct {
 	Info DeviceInfo `json:"info"`
+}
+
+// PrettyPrint prints the device information in a human-readable format.
+// The information is shown in one single line.
+// Name (MAC) - Version - Status
+func (d Device) PrettyPrint(w io.Writer) {
+	status := "Online"
+	if d.Info.Status.Offline {
+		status = "Offline"
+	}
+	_, _ = fmt.Fprintf(w, "%s (%s) - %s - %s\n", d.Info.Name, d.Info.MAC, d.Info.Version, status)
 }
 
 type DeviceInfo struct {
@@ -140,13 +152,21 @@ func WithNowFunc(nowFunc func() time.Time) func(*clientOpts) {
 	}
 }
 
-func New(apiConf APIConfig, opts ...ClientOption) *Client {
+func New(apiConf *APIConfig, opts ...ClientOption) *Client {
 	o := defaultClientOpts
 	for _, opt := range opts {
 		opt(&o)
 	}
 
-	httpClient := &http.Client{}
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.MaxIdleConns = 100
+	t.MaxConnsPerHost = 100
+	t.MaxIdleConnsPerHost = 100
+
+	httpClient := &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: t,
+	}
 	if o.reg != nil {
 		// wrap HTTP client with promhttp.InstrumentRoundTripperDuration
 		reg := extprom.WrapRegistererWithPrefix("qingping_client_", o.reg)
@@ -236,7 +256,6 @@ func (c *Client) GetDeviceList() (*DeviceListResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+c.Token.bearer)
 
 	resp, err := c.doAuthenticatedReq(req)
 	if err != nil {
