@@ -19,8 +19,11 @@ build:
 test: deps
 	go test -json -v $(TEST_FILES) 2>&1 | tee /tmp/gotest.log | gotestfmt
 
-lint:
-	$(LINTER) run
+tidy:
+	go mod tidy
+
+lint: tidy
+	$(LINTER) run --fix ./...
 
 clean:
 	go clean

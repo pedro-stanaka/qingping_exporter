@@ -10,7 +10,7 @@ import (
 	"github.com/pedro-stanaka/qingping_exporter/pkg/client"
 )
 
-type actionFunc func(prometheus.Registerer, log.Logger) error
+type actionFunc func(*prometheus.Registry, log.Logger) error
 
 type cmdsConfig struct {
 	cmdAction map[string]actionFunc
@@ -30,6 +30,7 @@ func main() {
 	apiConfig.BindFlags(app)
 
 	registerListCommand(app, cfg)
+	registerRunCommand(app, cfg)
 
 	cmd, err := app.Parse(os.Args[1:])
 

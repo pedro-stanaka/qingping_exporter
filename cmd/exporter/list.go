@@ -15,7 +15,7 @@ import (
 func registerListCommand(app *kingpin.Application, cfg *cmdsConfig) {
 	cmd := app.Command("devices", "List all devices.")
 
-	cfg.cmdAction[cmd.FullCommand()] = func(reg prometheus.Registerer, logger log.Logger) error {
+	cfg.cmdAction[cmd.FullCommand()] = func(reg *prometheus.Registry, logger log.Logger) error {
 		// setup client
 		// call client.ListDevices()
 		c := client.New(apiConfig, client.WithRegistry(reg))

@@ -169,7 +169,7 @@ func New(apiConf *APIConfig, opts ...ClientOption) *Client {
 	}
 	if o.reg != nil {
 		// wrap HTTP client with promhttp.InstrumentRoundTripperDuration
-		reg := extprom.WrapRegistererWithPrefix("qingping_client_", o.reg)
+		reg := extprom.WrapRegistererWithPrefix("qingping_", o.reg)
 		httpClientMetrics := thanoshttp.NewClientMetrics(reg)
 		httpClient.Transport = thanoshttp.InstrumentedRoundTripper(httpClient.Transport, httpClientMetrics)
 	}
