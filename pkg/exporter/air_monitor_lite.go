@@ -91,7 +91,7 @@ var defaultExporterOpts = exporterOpts{
 	syncInterval: 30 * time.Second,
 }
 
-type ExporterOption func(*exporterOpts)
+type Option func(*exporterOpts)
 
 func WithSyncInterval(syncInterval time.Duration) func(*exporterOpts) {
 	return func(o *exporterOpts) {
@@ -109,7 +109,7 @@ type AirMonitorLite struct {
 	logger       log.Logger
 }
 
-func NewAirMonitorLiteExporter(client *client.Client, reg prometheus.Registerer, logger log.Logger, opts ...ExporterOption) *AirMonitorLite {
+func NewAirMonitorLiteExporter(client *client.Client, reg prometheus.Registerer, logger log.Logger, opts ...Option) *AirMonitorLite {
 	o := defaultExporterOpts
 	for _, opt := range opts {
 		opt(&o)

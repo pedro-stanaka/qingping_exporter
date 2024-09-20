@@ -19,7 +19,7 @@ import (
 
 type APIConfig struct {
 	BaseURL   string
-	OauthUrl  string
+	OAuthURL  string
 	AppKey    string
 	AppSecret string
 }
@@ -33,7 +33,7 @@ func (o *APIConfig) BindFlags(app *kingpin.Application) {
 	app.Flag("oauth-url", "OAuth URL of the Qingping API.").
 		Envar("QINGPING_OAUTH_URL").
 		Default("https://oauth.cleargrass.com/oauth2/token").
-		StringVar(&o.OauthUrl)
+		StringVar(&o.OAuthURL)
 
 	app.Flag("app-key", "App key of the Qingping API.").
 		Envar("QINGPING_APP_KEY").
@@ -138,7 +138,7 @@ var defaultClientOpts = clientOpts{
 	nowFunc: time.Now,
 }
 
-type ClientOption func(*clientOpts)
+type Option func(*clientOpts)
 
 func WithRegistry(reg prometheus.Registerer) func(*clientOpts) {
 	return func(o *clientOpts) {
@@ -152,7 +152,7 @@ func WithNowFunc(nowFunc func() time.Time) func(*clientOpts) {
 	}
 }
 
-func New(apiConf *APIConfig, opts ...ClientOption) *Client {
+func New(apiConf *APIConfig, opts ...Option) *Client {
 	o := defaultClientOpts
 	for _, opt := range opts {
 		opt(&o)
@@ -190,7 +190,7 @@ func (c *Client) Authenticate() (string, error) {
 	data.Set("grant_type", "client_credentials")
 	data.Set("scope", "device_full_access")
 
-	req, err := http.NewRequest("POST", c.apiConfig.OauthUrl, bytes.NewBufferString(data.Encode()))
+	req, err := http.NewRequest("POST", c.apiConfig.OAuthURL, bytes.NewBufferString(data.Encode()))
 	if err != nil {
 		return "", err
 	}

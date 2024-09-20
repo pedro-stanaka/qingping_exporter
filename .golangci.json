@@ -19,5 +19,12 @@
 			"sections": ["standard", "default", "localmodule"]
 		}
 	},
+	"linters-settings": {
+		"errcheck": {
+			"exclude-functions": [
+				"(github.com/go-kit/log.Logger).Log"
+			]
+		}
+	},
 	"fast": true
 }

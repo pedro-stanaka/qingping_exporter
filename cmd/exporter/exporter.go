@@ -49,7 +49,7 @@ func registerRunCommand(app *kingpin.Application, cfg *cmdsConfig) {
 		// run exporter
 		g.Add(func() error {
 			return exp.Run(ctx)
-		}, func(err error) {
+		}, func(_ error) {
 			cancel()
 		})
 

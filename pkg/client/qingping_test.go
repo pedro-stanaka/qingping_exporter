@@ -23,7 +23,7 @@ func TestClient_TestAuthenticate(t *testing.T) {
 	}
 
 	qc := client.New(
-		&client.APIConfig{OauthUrl: server.URL, AppKey: "foo", AppSecret: "bar"},
+		&client.APIConfig{OAuthURL: server.URL, AppKey: "foo", AppSecret: "bar"},
 		client.WithNowFunc(nowFunc),
 	)
 	token, err := qc.Authenticate()
@@ -44,7 +44,7 @@ func createTestAuthServer(t *testing.T, tokenExpiry time.Duration) *httptest.Ser
 			require.Contains(t, r.Header.Get("Authorization"), "Basic")
 			w.WriteHeader(http.StatusOK)
 			expirySeconds := strconv.FormatInt(int64(tokenExpiry.Seconds()), 10)
-			w.Write([]byte(`{"access_token": "test-token", "expires_in": ` + expirySeconds + `}`))
+			_, _ = w.Write([]byte(`{"access_token": "test-token", "expires_in": ` + expirySeconds + `}`))
 			return
 		}
 
@@ -68,7 +68,7 @@ func TestClient_GetDeviceList(t *testing.T) {
 
 	client := client.New(&client.APIConfig{
 		BaseURL:  server.URL,
-		OauthUrl: authSrv.URL,
+		OAuthURL: authSrv.URL,
 	})
 
 	result, err := client.GetDeviceList()
@@ -95,13 +95,13 @@ func TestClient_ChangeDeviceSettings(t *testing.T) {
 
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"status": "success"}`))
+		_, _ = w.Write([]byte(`{"status": "success"}`))
 	}))
 	defer server.Close()
 
 	client := client.New(&client.APIConfig{
 		BaseURL:  server.URL,
-		OauthUrl: authSrv.URL,
+		OAuthURL: authSrv.URL,
 	})
 
 	err := client.ChangeDeviceSettings([]string{"mac1", "mac2"}, 5*time.Second, 10*time.Second)
@@ -125,7 +125,7 @@ func TestGetDataHistory(t *testing.T) {
 	// Create a new Qingping client
 	qc := client.New(&client.APIConfig{
 		BaseURL:  mockServer.URL,
-		OauthUrl: authSrv.URL,
+		OAuthURL: authSrv.URL,
 	})
 
 	// Call the GetDataHistory method
