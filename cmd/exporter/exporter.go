@@ -10,13 +10,12 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/oklog/run"
+	"github.com/pedro-stanaka/qingping_exporter/pkg/client"
+	"github.com/pedro-stanaka/qingping_exporter/pkg/exporter"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/thanos-io/thanos/pkg/component"
 	"github.com/thanos-io/thanos/pkg/prober"
 	"github.com/thanos-io/thanos/pkg/server/http"
-
-	"github.com/pedro-stanaka/qingping_exporter/pkg/client"
-	"github.com/pedro-stanaka/qingping_exporter/pkg/exporter"
 )
 
 func registerRunCommand(app *kingpin.Application, cfg *cmdsConfig) {

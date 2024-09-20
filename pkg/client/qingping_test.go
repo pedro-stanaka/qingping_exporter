@@ -8,10 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pedro-stanaka/qingping_exporter/pkg/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/pedro-stanaka/qingping_exporter/pkg/client"
 )
 
 func TestClient_TestAuthenticate(t *testing.T) {
@@ -24,7 +23,7 @@ func TestClient_TestAuthenticate(t *testing.T) {
 	}
 
 	qc := client.New(
-		client.APIConfig{OauthUrl: server.URL, AppKey: "foo", AppSecret: "bar"},
+		&client.APIConfig{OauthUrl: server.URL, AppKey: "foo", AppSecret: "bar"},
 		client.WithNowFunc(nowFunc),
 	)
 	token, err := qc.Authenticate()
@@ -67,7 +66,7 @@ func TestClient_GetDeviceList(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := client.New(client.APIConfig{
+	client := client.New(&client.APIConfig{
 		BaseURL:  server.URL,
 		OauthUrl: authSrv.URL,
 	})
@@ -100,7 +99,7 @@ func TestClient_ChangeDeviceSettings(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := client.New(client.APIConfig{
+	client := client.New(&client.APIConfig{
 		BaseURL:  server.URL,
 		OauthUrl: authSrv.URL,
 	})
@@ -124,7 +123,7 @@ func TestGetDataHistory(t *testing.T) {
 	defer mockServer.Close()
 
 	// Create a new Qingping client
-	qc := client.New(client.APIConfig{
+	qc := client.New(&client.APIConfig{
 		BaseURL:  mockServer.URL,
 		OauthUrl: authSrv.URL,
 	})

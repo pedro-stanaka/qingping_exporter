@@ -5,9 +5,8 @@ import (
 
 	"github.com/alecthomas/kingpin"
 	"github.com/go-kit/log"
-	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/pedro-stanaka/qingping_exporter/pkg/client"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type actionFunc func(*prometheus.Registry, log.Logger) error
