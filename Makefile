@@ -28,3 +28,7 @@ lint: tidy
 clean:
 	go clean
 	rm -f $(BINARY_NAME)
+
+# Build cross-platform docker image
+docker:
+	docker buildx build --platform linux/amd64,linux/arm64 -t qingping_exporter:latest .

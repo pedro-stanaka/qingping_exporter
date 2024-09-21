@@ -31,4 +31,6 @@ RUN chmod a+x qingping_exporter
 EXPOSE 10803
 
 # Command to run the executable
-CMD ["./qingping_exporter run"]
+ENTRYPOINT [ "/root/qingping_exporter" ]
+
+CMD [ "run" ]
