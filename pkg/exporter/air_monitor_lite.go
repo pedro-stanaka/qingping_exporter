@@ -16,14 +16,16 @@ import (
 const DeviceModel = "CGDN1"
 
 type metrics struct {
-	temperature  *prometheus.GaugeVec
-	humidity     *prometheus.GaugeVec
-	pm25         *prometheus.GaugeVec
-	pm10         *prometheus.GaugeVec
-	battery      *prometheus.GaugeVec
-	deviceInfo   *prometheus.GaugeVec
-	co2          *prometheus.GaugeVec
-	syncDuration *prometheus.HistogramVec
+	temperature *prometheus.GaugeVec
+	humidity    *prometheus.GaugeVec
+	pm25        *prometheus.GaugeVec
+	pm10        *prometheus.GaugeVec
+	battery     *prometheus.GaugeVec
+	deviceInfo  *prometheus.GaugeVec
+	co2         *prometheus.GaugeVec
+
+	syncDuration      *prometheus.HistogramVec
+	lastDataTimestamp *prometheus.GaugeVec
 }
 
 func newMetrics(reg prometheus.Registerer) *metrics {
@@ -62,6 +64,11 @@ func newMetrics(reg prometheus.Registerer) *metrics {
 		Help: "Device information",
 	}, []string{"device_name", "device_mac", "status", "product_name", "product_code", "product_id"})
 
+	lastDataTimestamp := promauto.With(reg).NewGaugeVec(prometheus.GaugeOpts{
+		Name: "device_last_data_timestamp",
+		Help: "Last data timestamp",
+	}, []string{"device_mac"})
+
 	syncDuration := promauto.With(reg).NewHistogramVec(prometheus.HistogramOpts{
 		Name:                            "air_monitor_sync_duration_seconds",
 		Help:                            "Duration of the sync request",
@@ -72,14 +79,16 @@ func newMetrics(reg prometheus.Registerer) *metrics {
 	}, []string{"phase"})
 
 	return &metrics{
-		temperature:  temperature,
-		humidity:     humidity,
-		pm25:         pm25,
-		pm10:         pm10,
-		battery:      battery,
-		deviceInfo:   deviceInfo,
-		co2:          co2,
-		syncDuration: syncDuration,
+		temperature: temperature,
+		humidity:    humidity,
+		pm25:        pm25,
+		pm10:        pm10,
+		battery:     battery,
+		deviceInfo:  deviceInfo,
+		co2:         co2,
+
+		syncDuration:      syncDuration,
+		lastDataTimestamp: lastDataTimestamp,
 	}
 }
 
@@ -140,8 +149,9 @@ func (a *AirMonitorLite) sync() error {
 		level.Error(a.logger).Log("msg", "failed to get device list", "err", err)
 		return err
 	}
-	endTime := time.Now()
-	startTime := endTime.Add(-30 * time.Minute)
+	endTime := time.Now().UTC()
+	// TODO: make this a flag
+	startTime := endTime.Add(-2 * time.Hour).UTC()
 
 	for _, device := range devices.Devices {
 		if device.Info.Product.Code != DeviceModel {
@@ -155,12 +165,19 @@ func (a *AirMonitorLite) sync() error {
 		}
 
 		if len(data.Data) == 0 {
-			level.Warn(a.logger).Log("msg", "no data available", "mac", device.Info.MAC)
+			level.Warn(a.logger).Log(
+				"msg", "no data available",
+				"mac", device.Info.MAC,
+				"name", device.Info.Name,
+				"start_time", startTime,
+				"end_time", endTime,
+			)
+			a.m.lastDataTimestamp.WithLabelValues(device.Info.MAC).Set(0)
 			continue
 		}
 
 		latestData := data.Data[len(data.Data)-1]
-
+		a.m.lastDataTimestamp.WithLabelValues(device.Info.MAC).Set(latestData.Timestamp.Value)
 		a.m.temperature.WithLabelValues(device.Info.MAC).Set(latestData.Temperature.Value)
 		a.m.humidity.WithLabelValues(device.Info.MAC).Set(latestData.Humidity.Value)
 		a.m.co2.WithLabelValues(device.Info.MAC).Set(latestData.CO2.Value)
