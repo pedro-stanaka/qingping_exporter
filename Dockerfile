@@ -25,6 +25,7 @@ WORKDIR /root/
 
 # Copy the Pre-built binary file from the previous stage
 COPY --from=builder /app/qingping_exporter .
+RUN chmod a+x qingping_exporter
 
 # Expose port (replace with your application's port)
 EXPOSE 10803
