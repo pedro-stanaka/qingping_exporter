@@ -14,6 +14,10 @@ RUN go mod download
 # Copy the source code into the container
 COPY . .
 
+RUN DESCRIPTION=$(cat README.md)
+LABEL org.opencontainers.image.description=$DESCRIPTION
+LABEL org.opencontainers.image.authors="Pedro Tanaka <pedro.stanaka@gmail.com>"
+
 # Build the Go app
 RUN CGO_ENABLED=0 GOOS=linux go build -o qingping_exporter ./cmd/...
 
