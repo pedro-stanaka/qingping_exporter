@@ -8,9 +8,10 @@ import (
 	"github.com/efficientgo/core/runutil"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/pedro-stanaka/qingping_exporter/pkg/client"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/pedro-stanaka/qingping_exporter/pkg/client"
 )
 
 const DeviceModel = "CGDN1"
@@ -143,6 +144,9 @@ func (a *AirMonitorLite) Run(ctx context.Context) error {
 func (a *AirMonitorLite) sync() error {
 	level.Info(a.logger).Log("msg", "starting sync loop")
 	defer level.Info(a.logger).Log("msg", "sync loop finished")
+
+	timer := prometheus.NewTimer(a.m.syncDuration.WithLabelValues("total"))
+	defer timer.ObserveDuration()
 
 	devices, err := a.client.GetDeviceList()
 	if err != nil {
