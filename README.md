@@ -42,8 +42,14 @@ services:
 
 The exporter collects the following metrics:
 
-| Metric name                        | Description                      | Labels                 | Type  |
-|------------------------------------|----------------------------------|------------------------|-------|
-| qingping_device_battery_percentage | Battery percentage of the device | device_id, device_name | Gauge |
-| qingping_device_temperature        | Temperature of the device        | device_id, device_name | Gauge |
-
+| **Metric Name**                   | **Type**  | **Labels**                                                                   | **Description**                |
+|-----------------------------------|-----------|------------------------------------------------------------------------------|--------------------------------|
+| air_monitor_temperature           | Gauge     | device\_mac                                                                  | Temperature in degrees Celsius |
+| air_monitor_humidity              | Gauge     | device\_mac                                                                  | Humidity percentage            |
+| air_monitor_pm25                  | Gauge     | device\_mac                                                                  | PM2.5 concentration in µg/m³   |
+| air_monitor_pm10                  | Gauge     | device\_mac                                                                  | PM10 concentration in µg/m³    |
+| air_monitor_co2                   | Gauge     | device\_mac                                                                  | CO2 concentration in ppm       |
+| air_monitor_battery               | Gauge     | device\_mac                                                                  | Battery level percentage       |
+| air_monitor_device_info           | Gauge     | device\_name, device\_mac, status, product\_name, product\_code, product\_id | Device information             |
+| device_last_data_timestamp        | Gauge     | device\_mac                                                                  | Last data timestamp            |
+| air_monitor_sync_duration_seconds | Histogram | phase                                                                        | Duration of the sync request   |
