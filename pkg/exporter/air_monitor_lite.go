@@ -197,6 +197,12 @@ func (a *AirMonitorLite) updateDeviceInfo(device client.Device) {
 	if device.Info.Status.Offline {
 		status = "offline"
 	}
+
+	value := 1.0
+	if device.Info.Status.Offline {
+		value = 0.0
+	}
+
 	a.m.deviceInfo.WithLabelValues(
 		device.Info.Name,
 		device.Info.MAC,
@@ -204,7 +210,7 @@ func (a *AirMonitorLite) updateDeviceInfo(device client.Device) {
 		device.Info.Product.EnName,
 		device.Info.Product.Code,
 		strconv.FormatInt(int64(device.Info.Product.ID), 10),
-	).Set(1)
+	).Set(value)
 
 	a.m.lastDataTimestamp.WithLabelValues(device.Info.MAC).Set(device.Data.Timestamp.Value)
 }
