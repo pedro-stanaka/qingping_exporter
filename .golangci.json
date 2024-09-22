@@ -14,17 +14,17 @@
 			"gofmt",
 			"gci",
 			"errname"
-		],
-		"gci": {
-			"sections": ["standard", "default", "localmodule"]
-		}
+		]
 	},
 	"linters-settings": {
 		"errcheck": {
 			"exclude-functions": [
 				"(github.com/go-kit/log.Logger).Log"
 			]
+		},
+		"gci": {
+			"sections": ["standard", "default", "localmodule"],
+			"custom-order": true
 		}
-	},
-	"fast": true
+	}
 }

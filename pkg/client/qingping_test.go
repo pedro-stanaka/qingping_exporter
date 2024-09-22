@@ -8,9 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pedro-stanaka/qingping_exporter/pkg/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pedro-stanaka/qingping_exporter/pkg/client"
 )
 
 func TestClient_TestAuthenticate(t *testing.T) {
