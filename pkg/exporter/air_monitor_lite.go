@@ -176,7 +176,6 @@ func (a *AirMonitorLite) sync() error {
 				"start_time", startTime,
 				"end_time", endTime,
 			)
-			a.m.lastDataTimestamp.WithLabelValues(device.Info.MAC).Set(0)
 			continue
 		}
 
@@ -206,4 +205,6 @@ func (a *AirMonitorLite) updateDeviceInfo(device client.Device) {
 		device.Info.Product.Code,
 		strconv.FormatInt(int64(device.Info.Product.ID), 10),
 	).Set(1)
+
+	a.m.lastDataTimestamp.WithLabelValues(device.Info.MAC).Set(device.Data.Timestamp.Value)
 }

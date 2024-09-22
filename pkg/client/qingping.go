@@ -70,6 +70,7 @@ type DeviceDataResponse struct {
 
 type Device struct {
 	Info DeviceInfo `json:"info"`
+	Data DeviceData `json:"data"`
 }
 
 // PrettyPrint prints the device information in a human-readable format.
