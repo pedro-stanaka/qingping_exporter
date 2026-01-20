@@ -20,7 +20,7 @@ Once you have the credentials you can run the exporter with docker or docker-com
 pre-built images published to GitHub Container Registry.
 
 ```bash
-docker run QINGPING_APP_KEY=your_app_key QINGPING_APP_SECRET=your_app_secret ghcr.io/pedro-stanaka/qingping_exporter:latest
+docker run -e QINGPING_APP_KEY=your_app_key -e QINGPING_APP_SECRET=your_app_secret ghcr.io/pedro-stanaka/qingping_exporter:latest
 ```
 
 Or using docker-compose:
@@ -37,6 +37,47 @@ services:
 ```
 
 ### Configuration
+
+The exporter can be configured using environment variables or command-line flags. Additionally, it supports loading
+configuration from a `.env` file in the current working directory.
+
+#### Using a `.env` file
+
+Copy the provided `.env.template` file to `.env` and fill in your credentials:
+
+```bash
+cp .env.template .env
+# Edit .env with your credentials
+```
+
+Then simply run the exporter:
+
+```bash
+./qingping_exporter run
+```
+
+#### Environment variables
+
+| Variable              | Description                      | Default                                      | Required |
+|-----------------------|----------------------------------|----------------------------------------------|----------|
+| `QINGPING_APP_KEY`    | Your Qingping API app key        | -                                            | Yes      |
+| `QINGPING_APP_SECRET` | Your Qingping API app secret     | -                                            | Yes      |
+| `QINGPING_BASE_URL`   | Base URL of the Qingping API     | `https://apis.cleargrass.com`                | No       |
+| `QINGPING_OAUTH_URL`  | OAuth URL of the Qingping API    | `https://oauth.cleargrass.com/oauth2/token`  | No       |
+
+#### Command-line flags
+
+```bash
+./qingping_exporter run --help
+```
+
+| Flag                   | Description                                           | Default        |
+|------------------------|-------------------------------------------------------|----------------|
+| `--web.listen-address` | Address to listen on for web interface and telemetry  | `:10803`       |
+| `--base-url`           | Base URL of the Qingping API                          | (see above)    |
+| `--oauth-url`          | OAuth URL of the Qingping API                         | (see above)    |
+| `--app-key`            | App key of the Qingping API                           | -              |
+| `--app-secret`         | App secret of the Qingping API                        | -              |
 
 ### Collected metrics
 

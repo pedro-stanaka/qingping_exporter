@@ -5,6 +5,7 @@ import (
 
 	"github.com/alecthomas/kingpin"
 	"github.com/go-kit/log"
+	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/pedro-stanaka/qingping_exporter/pkg/client"
@@ -19,6 +20,9 @@ type cmdsConfig struct {
 var apiConfig = &client.APIConfig{}
 
 func main() {
+	// Load .env file if it exists (ignore error if file doesn't exist)
+	_ = godotenv.Load()
+
 	app := kingpin.New("qingping_exporter", "A simple CLI application.")
 	kingpin.Version("1.0.0")
 	kingpin.HelpFlag.Short('h')
