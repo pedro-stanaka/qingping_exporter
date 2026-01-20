@@ -67,7 +67,7 @@ type exporterOpts struct {
 }
 
 var defaultExporterOpts = exporterOpts{
-	syncInterval:       30 * time.Second,
+	syncInterval:       5 * time.Minute, // Default to 5 minutes to reduce duplicate samples from API
 	useFixedTimestamps: false,
 	bufferWindow:       60 * time.Minute, // Default to 60 minutes to account for API delays and outages
 }
