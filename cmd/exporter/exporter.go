@@ -25,12 +25,28 @@ func registerRunCommand(app *kingpin.Application, cfg *cmdsConfig) {
 	listenAddr := cmd.Flag("web.listen-address", "Address to listen on for web interface and telemetry.").
 		Default(":10803").String()
 
+	useFixedTimestamps := cmd.Flag("use-fixed-timestamps",
+		"Emit metrics with original API timestamps instead of scrape time. "+
+			"When enabled, all buffered samples are emitted with their original timestamps. "+
+			"Requires Prometheus out_of_order_time_window configuration (recommend >= buffer-window).").
+		Default("false").Bool()
+
+	bufferWindow := cmd.Flag("buffer-window",
+		"How long to retain samples in the buffer. Longer windows help survive API outages "+
+			"but require larger Prometheus out_of_order_time_window. Only relevant when --use-fixed-timestamps is enabled.").
+		Default("60m").Duration()
+
 	cfg.cmdAction[cmd.FullCommand()] = func(reg *prometheus.Registry, logger log.Logger) error {
 		// setup client
 		c := client.New(apiConfig, client.WithRegistry(reg))
 
 		// create exporter
-		exp := exporter.NewAirMonitorLiteExporter(c, reg, logger)
+		opts := []exporter.Option{}
+		if *useFixedTimestamps {
+			opts = append(opts, exporter.WithFixedTimestamps())
+		}
+		opts = append(opts, exporter.WithBufferWindow(*bufferWindow))
+		exp := exporter.NewAirMonitorLiteExporter(c, reg, logger, opts...)
 
 		g := &run.Group{}
 

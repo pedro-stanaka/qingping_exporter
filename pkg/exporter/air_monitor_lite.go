@@ -16,50 +16,24 @@ import (
 
 const DeviceModel = "CGDN1"
 
-type metrics struct {
-	temperature *prometheus.GaugeVec
-	humidity    *prometheus.GaugeVec
-	pm25        *prometheus.GaugeVec
-	pm10        *prometheus.GaugeVec
-	battery     *prometheus.GaugeVec
-	deviceInfo  *prometheus.GaugeVec
-	co2         *prometheus.GaugeVec
+// Metric names for air monitor data
+const (
+	metricTemperature = "air_monitor_temperature"
+	metricHumidity    = "air_monitor_humidity"
+	metricCO2         = "air_monitor_co2"
+	metricPM25        = "air_monitor_pm25"
+	metricPM10        = "air_monitor_pm10"
+	metricBattery     = "air_monitor_battery"
+)
 
+// metrics holds metrics that don't need fixed timestamps
+type metrics struct {
+	deviceInfo        *prometheus.GaugeVec
 	syncDuration      *prometheus.HistogramVec
 	lastDataTimestamp *prometheus.GaugeVec
 }
 
 func newMetrics(reg prometheus.Registerer) *metrics {
-	temperature := promauto.With(reg).NewGaugeVec(prometheus.GaugeOpts{
-		Name: "air_monitor_temperature",
-		Help: "Temperature in degrees Celsius",
-	}, []string{"device_mac"})
-
-	humidity := promauto.With(reg).NewGaugeVec(prometheus.GaugeOpts{
-		Name: "air_monitor_humidity",
-		Help: "Humidity percentage",
-	}, []string{"device_mac"})
-
-	pm25 := promauto.With(reg).NewGaugeVec(prometheus.GaugeOpts{
-		Name: "air_monitor_pm25",
-		Help: "PM2.5 concentration in µg/m³",
-	}, []string{"device_mac"})
-
-	pm10 := promauto.With(reg).NewGaugeVec(prometheus.GaugeOpts{
-		Name: "air_monitor_pm10",
-		Help: "PM10 concentration in µg/m³",
-	}, []string{"device_mac"})
-
-	co2 := promauto.With(reg).NewGaugeVec(prometheus.GaugeOpts{
-		Name: "air_monitor_co2",
-		Help: "CO2 concentration in ppm",
-	}, []string{"device_mac"})
-
-	battery := promauto.With(reg).NewGaugeVec(prometheus.GaugeOpts{
-		Name: "air_monitor_battery",
-		Help: "Battery level percentage",
-	}, []string{"device_mac"})
-
 	deviceInfo := promauto.With(reg).NewGaugeVec(prometheus.GaugeOpts{
 		Name: "air_monitor_device_info",
 		Help: "Device information",
@@ -67,7 +41,7 @@ func newMetrics(reg prometheus.Registerer) *metrics {
 
 	lastDataTimestamp := promauto.With(reg).NewGaugeVec(prometheus.GaugeOpts{
 		Name: "device_last_data_timestamp",
-		Help: "Last data timestamp",
+		Help: "Last data timestamp from the API (Unix seconds). Use time() - device_last_data_timestamp to calculate staleness.",
 	}, []string{"device_mac"})
 
 	syncDuration := promauto.With(reg).NewHistogramVec(prometheus.HistogramOpts{
@@ -80,65 +54,111 @@ func newMetrics(reg prometheus.Registerer) *metrics {
 	}, []string{"phase"})
 
 	return &metrics{
-		temperature: temperature,
-		humidity:    humidity,
-		pm25:        pm25,
-		pm10:        pm10,
-		battery:     battery,
-		deviceInfo:  deviceInfo,
-		co2:         co2,
-
+		deviceInfo:        deviceInfo,
 		syncDuration:      syncDuration,
 		lastDataTimestamp: lastDataTimestamp,
 	}
 }
 
 type exporterOpts struct {
-	syncInterval time.Duration
+	syncInterval       time.Duration
+	useFixedTimestamps bool
+	bufferWindow       time.Duration
 }
 
 var defaultExporterOpts = exporterOpts{
-	syncInterval: 30 * time.Second,
+	syncInterval:       30 * time.Second,
+	useFixedTimestamps: false,
+	bufferWindow:       60 * time.Minute, // Default to 60 minutes to account for API delays and outages
 }
 
 type Option func(*exporterOpts)
 
-func WithSyncInterval(syncInterval time.Duration) func(*exporterOpts) {
+func WithSyncInterval(syncInterval time.Duration) Option {
 	return func(o *exporterOpts) {
 		o.syncInterval = syncInterval
 	}
 }
 
-// AirMonitorLite is a Qingping air monitor lite exporter.
-// It reads all data from API for the device model (CGDN1).
-type AirMonitorLite struct {
-	client       *client.Client
-	reg          prometheus.Registerer
-	m            *metrics
-	syncInterval time.Duration
-	logger       log.Logger
+// WithFixedTimestamps enables emitting metrics with their original API timestamps.
+// When enabled, all buffered samples are emitted with their original timestamps.
+// When disabled (default), only the latest sample per series is emitted without a timestamp.
+func WithFixedTimestamps() Option {
+	return func(o *exporterOpts) {
+		o.useFixedTimestamps = true
+	}
 }
 
+// WithBufferWindow sets how long to retain samples in the buffer.
+// Longer windows help survive API outages but require larger Prometheus out_of_order_time_window.
+// Default is 5 minutes.
+func WithBufferWindow(d time.Duration) Option {
+	return func(o *exporterOpts) {
+		o.bufferWindow = d
+	}
+}
+
+// AirMonitorLite is a Qingping air monitor lite exporter.
+// It reads all data from API for the device model (CGDN1).
+//
+// It implements prometheus.Collector to support both regular gauge mode
+// and fixed timestamp mode via the TimestampedCollector.
+type AirMonitorLite struct {
+	client             *client.Client
+	reg                prometheus.Registerer
+	m                  *metrics
+	tsCollector        *TimestampedCollector
+	syncInterval       time.Duration
+	useFixedTimestamps bool
+	logger             log.Logger
+}
+
+// NewAirMonitorLiteExporter creates a new AirMonitorLite exporter.
 func NewAirMonitorLiteExporter(client *client.Client, reg prometheus.Registerer, logger log.Logger, opts ...Option) *AirMonitorLite {
 	o := defaultExporterOpts
 	for _, opt := range opts {
 		opt(&o)
 	}
 
-	return &AirMonitorLite{
-		client:       client,
-		reg:          reg,
-		m:            newMetrics(reg),
-		syncInterval: o.syncInterval,
-		logger:       logger,
+	// Create timestamped collector with configured buffer window
+	tsCollector := NewTimestampedCollector(o.bufferWindow, reg)
+
+	// Register metric descriptors
+	tsCollector.RegisterMetric(metricTemperature, "Temperature in degrees Celsius", []string{"device_mac"})
+	tsCollector.RegisterMetric(metricHumidity, "Humidity percentage", []string{"device_mac"})
+	tsCollector.RegisterMetric(metricCO2, "CO2 concentration in ppm", []string{"device_mac"})
+	tsCollector.RegisterMetric(metricPM25, "PM2.5 concentration in µg/m³", []string{"device_mac"})
+	tsCollector.RegisterMetric(metricPM10, "PM10 concentration in µg/m³", []string{"device_mac"})
+	tsCollector.RegisterMetric(metricBattery, "Battery level percentage", []string{"device_mac"})
+
+	a := &AirMonitorLite{
+		client:             client,
+		reg:                reg,
+		m:                  newMetrics(reg),
+		tsCollector:        tsCollector,
+		syncInterval:       o.syncInterval,
+		useFixedTimestamps: o.useFixedTimestamps,
+		logger:             logger,
 	}
+
+	// Register self as a collector (for the timestamped metrics)
+	reg.MustRegister(a)
+
+	return a
+}
+
+// Describe implements prometheus.Collector.
+func (a *AirMonitorLite) Describe(ch chan<- *prometheus.Desc) {
+	a.tsCollector.Describe(ch)
+}
+
+// Collect implements prometheus.Collector.
+func (a *AirMonitorLite) Collect(ch chan<- prometheus.Metric) {
+	a.tsCollector.Collect(ch, a.useFixedTimestamps)
 }
 
 func (a *AirMonitorLite) Run(ctx context.Context) error {
-	ticker := time.NewTicker(a.syncInterval)
-	defer ticker.Stop()
 	return runutil.Repeat(a.syncInterval, ctx.Done(), a.sync)
-
 }
 
 func (a *AirMonitorLite) sync() error {
@@ -179,15 +199,26 @@ func (a *AirMonitorLite) sync() error {
 			continue
 		}
 
+		// Add all data points to the timestamped collector buffer
+		for _, d := range data.Data {
+			tsMs := int64(d.Timestamp.Value * 1000) // Convert Unix seconds to milliseconds
+			labels := []string{device.Info.MAC}
+
+			a.tsCollector.AddSample(metricTemperature, labels, d.Temperature.Value, tsMs)
+			a.tsCollector.AddSample(metricHumidity, labels, d.Humidity.Value, tsMs)
+			a.tsCollector.AddSample(metricCO2, labels, d.CO2.Value, tsMs)
+			a.tsCollector.AddSample(metricPM25, labels, d.PM25.Value, tsMs)
+			a.tsCollector.AddSample(metricPM10, labels, d.PM10.Value, tsMs)
+			a.tsCollector.AddSample(metricBattery, labels, d.Battery.Value, tsMs)
+		}
+
+		// Update staleness metric with latest timestamp
 		latestData := data.Data[len(data.Data)-1]
 		a.m.lastDataTimestamp.WithLabelValues(device.Info.MAC).Set(latestData.Timestamp.Value)
-		a.m.temperature.WithLabelValues(device.Info.MAC).Set(latestData.Temperature.Value)
-		a.m.humidity.WithLabelValues(device.Info.MAC).Set(latestData.Humidity.Value)
-		a.m.co2.WithLabelValues(device.Info.MAC).Set(latestData.CO2.Value)
-		a.m.pm25.WithLabelValues(device.Info.MAC).Set(latestData.PM25.Value)
-		a.m.pm10.WithLabelValues(device.Info.MAC).Set(latestData.PM10.Value)
-		a.m.battery.WithLabelValues(device.Info.MAC).Set(latestData.Battery.Value)
 	}
+
+	// Prune old samples from the buffer
+	a.tsCollector.Prune()
 
 	return nil
 }
