@@ -1,30 +1,59 @@
 {
-	"run": {
-		"tests": true,
-		"timeout": "10m0s",
-		"allow-parallel-runners": true
-	},
-	"linters": {
-		"enable": [
-			"revive",
-			"govet",
-			"staticcheck",
-			"errcheck",
-			"gocyclo",
-			"gofmt",
-			"gci",
-			"errname"
-		]
-	},
-	"linters-settings": {
-		"errcheck": {
-			"exclude-functions": [
-				"(github.com/go-kit/log.Logger).Log"
-			]
-		},
-		"gci": {
-			"sections": ["standard", "default", "localmodule"],
-			"custom-order": true
-		}
-	}
+  "formatters": {
+    "enable": [
+      "gci",
+      "gofmt"
+    ],
+    "exclusions": {
+      "generated": "lax",
+      "paths": [
+        "third_party$",
+        "builtin$",
+        "examples$"
+      ]
+    },
+    "settings": {
+      "gci": {
+        "custom-order": true,
+        "sections": [
+          "standard",
+          "default",
+          "localmodule"
+        ]
+      }
+    }
+  },
+  "linters": {
+    "enable": [
+      "errname",
+      "gocyclo",
+      "revive"
+    ],
+    "exclusions": {
+      "generated": "lax",
+      "paths": [
+        "third_party$",
+        "builtin$",
+        "examples$"
+      ],
+      "presets": [
+        "comments",
+        "common-false-positives",
+        "legacy",
+        "std-error-handling"
+      ]
+    },
+    "settings": {
+      "errcheck": {
+        "exclude-functions": [
+          "(github.com/go-kit/log.Logger).Log"
+        ]
+      }
+    }
+  },
+  "run": {
+    "allow-parallel-runners": true,
+    "tests": true
+  },
+  "version": "2"
 }
