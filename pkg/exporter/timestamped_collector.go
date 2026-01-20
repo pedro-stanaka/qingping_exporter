@@ -48,9 +48,9 @@ type TimestampedCollector struct {
 	retention time.Duration
 
 	// Internal metrics
-	samplesBuffered      prometheus.Gauge
-	samplesDroppedOOO    prometheus.Counter
-	samplesDroppedDup    prometheus.Counter
+	samplesBuffered   prometheus.Gauge
+	samplesDroppedOOO prometheus.Counter
+	samplesDroppedDup prometheus.Counter
 }
 
 // NewTimestampedCollector creates a new TimestampedCollector with the given retention period.
